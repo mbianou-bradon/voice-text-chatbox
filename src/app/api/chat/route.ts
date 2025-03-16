@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import { OpenAIStream, StreamingTextResponse } from "ai";
+// import { OpenAIStream, StreamingTextResponse } from "ai";
 
 /** Creating a new OpenAI API client */
 const openai = new OpenAI({
@@ -18,10 +18,12 @@ export async function POST(req: Request) {
       base64Audio = audio.startsWith("data:") ? audio.split(",")[1] : audio;
     }
 
+    console.log({ messages: messages, text: text, audio: base64Audio });
+
     const response = await openai.chat.completions.create({
       model: "gpt-4o-audio-preview",
       modalities: ["text", "audio"],
-      audio: { voice: "alloy", format: "wav" },
+      audio: { voice: "alloy", format: "pcm16" },
       messages: [
         {
           role: "system",
@@ -51,8 +53,20 @@ export async function POST(req: Request) {
       temperature: 1,
     });
 
-    const stream = OpenAIStream(response);
-    return new StreamingTextResponse(stream);
+    const stream = new ReadableStream({
+      async start(controller) {
+        for await (const chunk of response) {
+          controller.enqueue(
+            new TextEncoder().encode(chunk.choices[0]?.delta?.content || "")
+          );
+        }
+        controller.close();
+      },
+    });
+
+    return new Response(stream, {
+      headers: { "Content-Type": "text/plain; charset=utf-8" },
+    });
   } catch (error: unknown) {
     let errorMessage = "An unexpected error occurred.";
 
