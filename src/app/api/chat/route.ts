@@ -3,12 +3,13 @@ import OpenAI from "openai";
 
 /** Creating a new OpenAI API client */
 const openai = new OpenAI({
-  apiKey: process.env.NEXT_APP_OPEN_AI_API_KEY || "",
+  apiKey: process.env.NEXT_APP_OPEN_AI_API_KEY,
 });
 
 export const runtime = "edge";
 
 export async function POST(req: Request) {
+ 
   try {
     const { messages, text, audio } = await req.json();
 
@@ -18,56 +19,36 @@ export async function POST(req: Request) {
       base64Audio = audio.startsWith("data:") ? audio.split(",")[1] : audio;
     }
 
-    console.log({ messages: messages, text: text, audio: base64Audio });
+    // console.log({ messages: messages, text: text, audio: base64Audio });
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4o-audio-preview",
-      modalities: ["text", "audio"],
-      audio: { voice: "alloy", format: "pcm16" },
+      model: audio ? "gpt-4o-audio-preview" : "gpt-4o", // Use appropriate model for audio input
       messages: [
         {
           role: "system",
-          content: [
-            {
-              type: "text",
-              text: "You are an AI assistant that helps users determine their AI score by asking a series of dynamically generated questions. Each question should be based on the user's previous answer, ensuring a logical progression. The AI should engage users effectively and maintain clarity in phrasing.",
-            },
-          ],
+          content: "You are an AI assistant that helps users determine their AI score by asking a series of dynamically generated questions. Each question should be based on the user's previous answer, ensuring a logical progression. The AI should engage users effectively and maintain clarity in phrasing.",
         },
         {
           role: "user",
-          content: [
-            text ? { type: "text", text } : null,
-            base64Audio
-              ? {
-                  type: "input_audio",
-                  input_audio: { data: base64Audio, format: "wav" },
-                }
-              : null,
-          ].filter(Boolean),
+          content: text
+            ? text
+            : base64Audio
+            ? [{ type: "input_audio", input_audio: { data: base64Audio, format: "wav" } }]
+            : null,
         },
         ...messages,
-      ],
-      store: true,
-      stream: true,
+      ].filter(Boolean),
       temperature: 1,
     });
 
-    const stream = new ReadableStream({
-      async start(controller) {
-        for await (const chunk of response) {
-          controller.enqueue(
-            new TextEncoder().encode(chunk.choices[0]?.delta?.content || "")
-          );
-        }
-        controller.close();
-      },
-    });
+    console.log(response.choices[0].audio);
 
-    return new Response(stream, {
-      headers: { "Content-Type": "text/plain; charset=utf-8" },
+    return new Response(response.choices[0]?.message?.content, {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
     });
   } catch (error: unknown) {
+    console.log('error message', error.message);
     let errorMessage = "An unexpected error occurred.";
 
     if (error instanceof Error) {

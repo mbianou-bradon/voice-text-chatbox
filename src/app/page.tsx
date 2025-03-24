@@ -5,7 +5,8 @@ export default function Home() {
     <div className="flex flex-col min-h-screen items-center justify-center max-w-[800px] mx-auto overflow-hidden">
       <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
         <header>
-          <p>Welcome on Voice-Text Chatbox</p>
+          {/* Ensure static content to avoid hydration mismatch */}
+          <p>Welcome to the Voice-Text Chatbox</p>
         </header>
         <Chat />
       </main>
