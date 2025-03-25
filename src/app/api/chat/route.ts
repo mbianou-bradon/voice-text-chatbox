@@ -53,7 +53,7 @@ export async function POST(req: Request) {
       headers: { "Content-Type": "application/json" },
     });
   } catch (error: unknown) {
-    console.log("error message", error.message);
+    // console.log("error message", error.message);
     let errorMessage = "An unexpected error occurred.";
 
     if (error instanceof Error) {
