@@ -5,7 +5,9 @@ import { FaMicrophone, FaPaperPlane } from "react-icons/fa";
 
 export default function Home() {
   const [textInput, setTextInput] = useState("");
-  const [messages, setMessages] = useState<{ role: string; content: string }[]>([]);
+  const [messages, setMessages] = useState<{ role: string; content: string }[]>(
+    []
+  );
   const [recording, setRecording] = useState(false);
   const [audioBase64, setAudioBase64] = useState<string | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -26,7 +28,9 @@ export default function Home() {
       };
 
       mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/wav" });
+        const audioBlob = new Blob(audioChunksRef.current, {
+          type: "audio/wav",
+        });
         const reader = new FileReader();
         reader.readAsDataURL(audioBlob);
         reader.onloadend = () => {
@@ -116,7 +120,9 @@ export default function Home() {
         {messages.map((msg, index) => (
           <div
             key={index}
-            className={`mb-2 ${msg.role === "user" ? "text-right" : "text-left"}`}
+            className={`mb-2 ${
+              msg.role === "user" ? "text-right" : "text-left"
+            }`}
           >
             <span
               className={`inline-block px-4 py-2 rounded-lg ${
@@ -130,18 +136,24 @@ export default function Home() {
       </div>
 
       <div className="p-4 flex items-center gap-3 border-t border-gray-700 w-full">
-        <input
-          type="text"
-          placeholder="Type your answer..."
-          value={textInput}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              sendMessage();
-            }
-          }}
-          onChange={(e) => setTextInput(e.target.value)}
-          className="flex-1 p-2 rounded bg-gray-800 text-white focus:outline-none w-full"
-        />
+        {!recording ? (
+          <input
+            type="text"
+            placeholder="Type your answer..."
+            value={textInput}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") sendMessage();
+            }}
+            onChange={(e) => setTextInput(e.target.value)}
+            className="flex-1 p-2 rounded bg-gray-800 text-white focus:outline-none w-full"
+          />
+        ) : (
+          // Show recording animation when recording
+          <div className="flex-1 flex items-center justify-center">
+            <div className="h-3 w-3 bg-red-500 rounded-full animate-pulse"></div>
+            <p className="text-gray-400 ml-2">Recording...</p>
+          </div>
+        )}
 
         {textInput.length === 0 && (
           <button
